@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SMS Classifier — Batch</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --border-hover: #3a3d4a;
+      --text: #e2e8f0;
+      --sub: #a0aabf;
+      --muted: #64748b;
+      --radius: 12px;
+      --transaction:          #3b82f6;
+      --otp_verification:     #8b5cf6;
+      --promotion_offer:      #f59e0b;
+      --security_alert:       #ef4444;
+      --delivery_logistics:   #10b981;
+      --appointment_reminder: #06b6d4;
+      --customer_service:     #6366f1;
+      --spam_advertising:     #f97316;
+      --billing_reminder:     #84cc16;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 64px;
+      background-image:
+        radial-gradient(ellipse 80% 40% at 50% 0%, #1a2a6c18 0%, transparent 70%),
+        radial-gradient(ellipse 60% 30% at 80% 80%, #22d3a00a 0%, transparent 60%);
+    }
+
+    .wrap { width: 100%; max-width: 680px; }
+
+    /* ── Header ── */
+    header { text-align: center; margin-bottom: 32px; }
+    .eyebrow {
+      font-size: 0.7rem; text-transform: uppercase;
+      letter-spacing: .14em; color: #22d3a0;
+      font-weight: 600; margin-bottom: 10px;
+    }
+    header h1 {
+      font-size: 1.9rem; font-weight: 800; letter-spacing: -.5px;
+      background: linear-gradient(135deg, #f0f2ff 30%, #a0c4ff 70%, #22d3a0 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
+    }
+    header p { color: var(--sub); margin-top: 8px; font-size: 0.9rem; line-height: 1.6; }
+
+    /* ── Card ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      width: 100%;
+    }
+
+    .section-label {
+      font-size: 0.68rem; text-transform: uppercase;
+      letter-spacing: .1em; color: var(--muted);
+      font-weight: 600; margin-bottom: 10px;
+    }
+
+    /* ── Input area ── */
+    .input-wrapper { position: relative; }
+    textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.88rem;
+      padding: 12px;
+      resize: vertical;
+      min-height: 140px;
+      outline: none;
+      transition: border-color .2s;
+      line-height: 1.7;
+      font-family: inherit;
+    }
+    textarea:focus { border-color: #4f6ef7; }
+    textarea::placeholder { color: var(--muted); }
+
+    .char-hint {
+      font-size: 0.72rem; color: var(--muted);
+      margin-top: 6px; text-align: right;
+    }
+
+    button {
+      margin-top: 14px;
+      width: 100%;
+      padding: 11px;
+      background: linear-gradient(135deg, #22d3a0, #4f9ef7);
+      color: #0b0e18;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: opacity .2s, transform .15s, box-shadow .2s;
+      box-shadow: 0 4px 16px #22d3a025;
+    }
+    button:hover:not(:disabled) {
+      opacity: .92; transform: translateY(-1px);
+      box-shadow: 0 6px 22px #22d3a040;
+    }
+    button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+    .spinner {
+      display: inline-block; width: 14px; height: 14px;
+      border: 2px solid #0b0e1866; border-top-color: #0b0e18;
+      border-radius: 50%; animation: spin .6s linear infinite;
+      vertical-align: middle; margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-msg {
+      color: #ef4444; font-size: 0.82rem;
+      margin-top: 10px; display: none;
+    }
+
+    /* ── Summary bar ── */
+    #summary {
+      display: none;
+      margin-top: 24px;
+      padding: 12px 16px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      display: none;
+      align-items: center;
+      gap: 20px;
+      flex-wrap: wrap;
+    }
+    .summary-item { font-size: 0.8rem; color: var(--muted); }
+    .summary-item strong { color: var(--text); font-size: 0.95rem; }
+    .cache-badge {
+      margin-left: auto;
+      font-size: 0.72rem; font-weight: 600;
+      padding: 3px 10px; border-radius: 99px;
+      background: #22d3a015; border: 1px solid #22d3a030;
+      color: #22d3a0;
+    }
+
+    /* ── Results ── */
+    #results { margin-top: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+    .result-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      transition: border-color .2s;
+    }
+    .result-card:hover { border-color: var(--border-hover); }
+
+    .result-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 12px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .result-index {
+      font-size: 0.7rem; font-weight: 700;
+      width: 22px; height: 22px; border-radius: 50%;
+      background: var(--border); color: var(--muted);
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .result-text {
+      font-size: 0.82rem; color: var(--sub);
+      flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    }
+    .from-cache-tag {
+      font-size: 0.65rem; padding: 2px 8px;
+      border-radius: 99px; background: #22d3a015;
+      border: 1px solid #22d3a030; color: #22d3a0;
+      font-weight: 600; flex-shrink: 0;
+    }
+
+    .result-body { padding: 14px 16px; }
+
+    .top-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+    }
+    .cat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .cat-name { font-weight: 700; font-size: 0.95rem; }
+    .cat-conf { margin-left: auto; font-size: 1.3rem; font-weight: 800; }
+
+    .bar-row {
+      display: flex; align-items: center; gap: 10px; margin-bottom: 8px;
+    }
+    .bar-row:last-child { margin-bottom: 0; }
+    .bar-label { width: 160px; font-size: 0.78rem; color: var(--sub); flex-shrink: 0; }
+    .bar-track {
+      flex: 1; height: 6px; background: var(--border);
+      border-radius: 99px; overflow: hidden;
+    }
+    .bar-fill { height: 100%; border-radius: 99px; transition: width .4s ease; }
+    .bar-pct { width: 36px; text-align: right; font-size: 0.75rem; color: var(--muted); }
+
+    /* ── Nav ── */
+    .nav {
+      display: flex; gap: 10px; justify-content: center; margin-top: 32px;
+    }
+    a.btn-link {
+      padding: 9px 20px; border-radius: 8px; font-size: 0.85rem; font-weight: 600;
+      text-decoration: none; transition: opacity .2s, border-color .2s;
+      background: var(--surface); border: 1px solid var(--border); color: var(--sub);
+    }
+    a.btn-link:hover { opacity: .85; border-color: var(--border-hover); color: var(--text); }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="eyebrow">Clasificación masiva</div>
+    <h1>Batch Classifier</h1>
+    <p>Pegá varios mensajes (uno por línea) y clasificalos todos a la vez.</p>
+  </header>
+
+  <div class="card">
+    <div class="section-label">Mensajes — uno por línea, máximo 50</div>
+    <div class="input-wrapper">
+      <textarea id="input" placeholder="Tu código OTP es 482910. No lo compartas.
+Se debitó $45.000 de tu tarjeta en Falabella.
+Tu pedido #45231 está en camino."></textarea>
+    </div>
+    <div class="char-hint" id="hint">0 mensajes</div>
+    <div class="error-msg" id="error"></div>
+    <button id="btn" onclick="runBatch()">Clasificar todos</button>
+  </div>
+
+  <div id="summary">
+    <div class="summary-item"><strong id="s-total">0</strong> mensajes</div>
+    <div class="summary-item"><strong id="s-cached">0</strong> desde caché</div>
+    <div class="cache-badge" id="cache-badge" style="display:none">caché activo</div>
+  </div>
+
+  <div id="results"></div>
+
+  <div class="nav">
+    <a class="btn-link" href="/classify">Clasificador simple</a>
+    <a class="btn-link" href="/">Inicio</a>
+  </div>
+
+</div>
+<script>
+  const COLORS = {
+    transaction:          "#3b82f6",
+    otp_verification:     "#8b5cf6",
+    promotion_offer:      "#f59e0b",
+    security_alert:       "#ef4444",
+    delivery_logistics:   "#10b981",
+    appointment_reminder: "#06b6d4",
+    customer_service:     "#6366f1",
+    spam_advertising:     "#f97316",
+    billing_reminder:     "#84cc16",
+  };
+
+  function color(cat) { return COLORS[cat] ?? "#94a3b8"; }
+  function fmt(cat)   { return cat.replace(/_/g, " "); }
+
+  // Live hint counter
+  document.getElementById("input").addEventListener("input", updateHint);
+  function updateHint() {
+    const lines = getTexts();
+    const hint  = document.getElementById("hint");
+    hint.textContent = lines.length === 0
+      ? "0 mensajes"
+      : `${lines.length} mensaje${lines.length !== 1 ? "s" : ""}`;
+    hint.style.color = lines.length > 50 ? "#ef4444" : "var(--muted)";
+  }
+
+  function getTexts() {
+    return document.getElementById("input").value
+      .split("\n")
+      .map(l => l.trim())
+      .filter(l => l.length > 0);
+  }
+
+  async function runBatch() {
+    const texts = getTexts();
+    const err   = document.getElementById("error");
+    err.style.display = "none";
+
+    if (texts.length === 0) {
+      err.textContent = "Escribe al menos un mensaje.";
+      err.style.display = "block"; return;
+    }
+    if (texts.length > 50) {
+      err.textContent = "Máximo 50 mensajes por batch.";
+      err.style.display = "block"; return;
+    }
+    if (texts.some(t => t.length > 512)) {
+      err.textContent = "Cada mensaje debe tener máximo 512 caracteres.";
+      err.style.display = "block"; return;
+    }
+
+    const btn = document.getElementById("btn");
+    btn.disabled = true;
+    btn.innerHTML = `<span class="spinner"></span>Clasificando ${texts.length} mensajes…`;
+    document.getElementById("results").innerHTML = "";
+    document.getElementById("summary").style.display = "none";
+
+    try {
+      const res = await fetch("/classify/batch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ texts }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        err.textContent = body.detail ?? `Error ${res.status}`;
+        err.style.display = "block"; return;
+      }
+      const data = await res.json();
+      renderBatch(data);
+    } catch {
+      err.textContent = "No se pudo conectar con el servidor.";
+      err.style.display = "block";
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Clasificar todos";
+    }
+  }
+
+  function renderBatch(data) {
+    // Summary bar
+    document.getElementById("s-total").textContent  = data.total;
+    document.getElementById("s-cached").textContent = data.from_cache;
+    const summary = document.getElementById("summary");
+    summary.style.display = "flex";
+    const badge = document.getElementById("cache-badge");
+    badge.style.display = data.from_cache > 0 ? "inline-block" : "none";
+
+    // Result cards
+    const container = document.getElementById("results");
+    container.innerHTML = data.results.map((r, i) => {
+      const cat  = r.prediction.category;
+      const conf = Math.round(r.prediction.confidence * 100);
+      const c    = color(cat);
+      const cached = i < data.from_cache; // approximate — server doesn't send per-item flag
+
+      const bars = r.top_3.map(p => {
+        const pct = Math.round(p.confidence * 100);
+        return `<div class="bar-row">
+          <span class="bar-label">${fmt(p.category)}</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${pct}%;background:${color(p.category)}"></div>
+          </div>
+          <span class="bar-pct">${pct}%</span>
+        </div>`;
+      }).join("");
+
+      return `
+        <div class="result-card">
+          <div class="result-header">
+            <div class="result-index">${i + 1}</div>
+            <span class="result-text">${escHtml(r.text)}</span>
+          </div>
+          <div class="result-body">
+            <div class="top-row">
+              <div class="cat-dot" style="background:${c}"></div>
+              <span class="cat-name" style="color:${c}">${fmt(cat)}</span>
+              <span class="cat-conf" style="color:${c}">${conf}%</span>
+            </div>
+            ${bars}
+          </div>
+        </div>`;
+    }).join("");
+  }
+
+  function escHtml(str) {
+    return str.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");
+  }
+</script>
+</body>
+</html>

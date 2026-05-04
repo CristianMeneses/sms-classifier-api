@@ -1,0 +1,9 @@
+services:
+  - type: web
+    name: sms-classifier-api
+    runtime: docker
+    plan: starter
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8000

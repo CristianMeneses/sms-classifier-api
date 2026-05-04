@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SMS Classifier — Categorías</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0f1117; --surface: #1a1d27; --border: #2a2d3a;
+      --text: #e2e8f0; --muted: #64748b; --radius: 12px;
+    }
+    body {
+      background: var(--bg); color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh; display: flex; flex-direction: column;
+      align-items: center; padding: 40px 16px;
+    }
+    .wrap { width: 100%; max-width: 720px; }
+
+    header { text-align: center; margin-bottom: 36px; }
+    header h1 { font-size: 1.75rem; font-weight: 800; }
+    header p  { color: var(--muted); margin-top: 6px; font-size: 0.9rem; }
+
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 16px;
+    }
+
+    .cat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: var(--radius); overflow: hidden;
+    }
+    .cat-header {
+      display: flex; align-items: center; gap: 10px;
+      padding: 14px 16px;
+      border-bottom: 1px solid var(--border);
+    }
+    .cat-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; }
+    .cat-name { font-weight: 700; font-size: 0.9rem; }
+    .cat-body { padding: 14px 16px; }
+    .cat-desc { font-size: 0.82rem; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
+    .examples { display: flex; flex-direction: column; gap: 8px; }
+    .cat-example {
+      background: var(--bg); border-radius: 8px;
+      padding: 10px 12px; font-size: 0.8rem; color: #94a3b8;
+      line-height: 1.5; border-left: 3px solid var(--border);
+    }
+    .example-label {
+      font-size: 0.68rem; text-transform: uppercase;
+      letter-spacing: .07em; color: var(--muted); margin-bottom: 5px;
+    }
+
+    .nav {
+      display: flex; gap: 12px; justify-content: center; margin-top: 32px; flex-wrap: wrap;
+    }
+    a.btn {
+      padding: 11px 24px; border-radius: 10px; font-size: 0.88rem;
+      font-weight: 700; text-decoration: none;
+      transition: transform .15s, opacity .15s, box-shadow .15s;
+    }
+    a.btn:hover { transform: translateY(-1px); opacity: .9; }
+    a.btn.primary {
+      background: linear-gradient(135deg, #22d3a0, #4f9ef7);
+      color: #0b0e18;
+      box-shadow: 0 4px 18px #22d3a030;
+    }
+    a.btn.primary:hover { box-shadow: 0 6px 24px #22d3a050; }
+    a.btn.secondary {
+      background: var(--surface); border: 1px solid var(--border); color: var(--sub);
+    }
+    a.btn.secondary:hover { border-color: #3a3d4a; color: var(--text); }
+
+    #loading { text-align: center; color: var(--muted); padding: 40px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Categorías disponibles</h1>
+    <p>El modelo clasifica mensajes SMS en las siguientes categorías.</p>
+  </header>
+
+  <div id="loading">Cargando categorías…</div>
+  <div class="grid" id="grid"></div>
+
+  <div class="nav">
+    <a class="btn primary" href="/classify">Clasificador simple</a>
+    <a class="btn primary" href="/classify/batch">Clasificador por lotes</a>
+    <a class="btn secondary" href="/">Inicio</a>
+  </div>
+
+</div>
+<script>
+  function fmt(cat) { return cat.replace(/_/g, " "); }
+
+  fetch("/api/categories")
+    .then(r => r.json())
+    .then(data => {
+      document.getElementById("loading").style.display = "none";
+      const grid = document.getElementById("grid");
+      grid.innerHTML = data.categories.map(c => `
+        <div class="cat-card">
+          <div class="cat-header">
+            <div class="cat-dot" style="background:${c.color}"></div>
+            <span class="cat-name" style="color:${c.color}">${fmt(c.name)}</span>
+          </div>
+          <div class="cat-body">
+            <div class="cat-desc">${c.description}</div>
+            <div class="examples">
+              <div class="cat-example">
+                <div class="example-label">ES</div>
+                ${c.example_es}
+              </div>
+              <div class="cat-example">
+                <div class="example-label">EN</div>
+                ${c.example_en}
+              </div>
+            </div>
+          </div>
+        </div>`).join("");
+    })
+    .catch(() => {
+      document.getElementById("loading").textContent = "Error al cargar las categorías.";
+    });
+</script>
+</body>
+</html>

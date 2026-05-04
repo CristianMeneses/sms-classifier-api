@@ -1,0 +1,150 @@
+# SMS Classifier API
+
+API REST para clasificar mensajes SMS en categorías usando **DistilBERT multilingual** con fine-tuning sobre un dataset sintético multilingüe (ES + EN).
+
+## Categorías
+
+| Categoría | Descripción |
+|---|---|
+| `transaction` | Confirmaciones de pagos, débitos y transferencias |
+| `otp_verification` | Códigos de un solo uso para verificar identidad |
+| `promotion_offer` | Descuentos, cupones y ofertas de comercios |
+| `security_alert` | Accesos no reconocidos y actividad sospechosa |
+| `delivery_logistics` | Estado de envíos y seguimiento de pedidos |
+| `appointment_reminder` | Recordatorios de citas médicas y dentales |
+| `customer_service` | Tickets, reclamos y soporte |
+| `spam_advertising` | Mensajes fraudulentos y publicidad engañosa |
+| `billing_reminder` | Facturas pendientes y fechas de vencimiento |
+
+## Stack tecnológico
+
+- **Python 3.11** + **FastAPI** + **Uvicorn**
+- **DistilBERT** (`distilbert-base-multilingual-cased`) vía HuggingFace Transformers
+- **PyTorch** (CPU-only en producción)
+- **Pydantic v2** para validación
+- **Docker** para contenedorización
+- **Render.com** para deployment
+
+## Estructura del proyecto
+
+```
+app/
+├── main.py                  # App entry point
+├── routers/
+│   ├── pages.py             # Rutas HTML
+│   ├── inference.py         # POST /classify, POST /classify/batch
+│   └── meta.py              # GET /health, GET /api/categories
+├── services/
+│   └── classifier.py        # Lógica de inferencia + caché LRU
+├── schemas.py               # Modelos Pydantic
+├── category_meta.py         # Metadata de categorías
+├── cache.py                 # LRU cache thread-safe
+├── model_loader.py          # Carga del modelo al startup
+└── utils.py                 # normalize(), read_static()
+training/
+├── config.py                # Hiperparámetros
+├── generate_dataset.py      # Genera training/data/sms_dataset.csv
+├── train.py                 # Fine-tuning script
+└── eval_report.py           # Reporte de métricas por categoría
+```
+
+## Correr localmente
+
+### Requisitos
+- Python 3.11+
+- Modelo entrenado en `./model/` (ver sección de training)
+
+```bash
+# Crear entorno virtual
+python -m venv .venv
+.venv\Scripts\activate        # Windows
+source .venv/bin/activate     # Linux/Mac
+
+# Instalar dependencias
+pip install -r requirements.txt
+pip install torch --index-url https://download.pytorch.org/whl/cpu
+
+# Levantar API
+uvicorn app.main:app --reload
+```
+
+API disponible en `http://localhost:8000`
+
+### Con Docker
+
+```bash
+docker compose up --build
+```
+
+## Entrenar el modelo
+
+```bash
+pip install -r requirements-training.txt
+
+cd training
+python generate_dataset.py   # genera training/data/sms_dataset.csv
+python train.py              # fine-tuning → guarda modelo en ./model/
+python eval_report.py        # reporte de métricas por categoría
+```
+
+## Endpoints
+
+| Método | Ruta | Descripción |
+|---|---|---|
+| `GET` | `/` | Home con descripción de la API |
+| `GET` | `/classify` | Clasificador interactivo (UI) |
+| `GET` | `/classify/batch` | Clasificador por lotes (UI) |
+| `GET` | `/categories` | Vista de categorías con ejemplos |
+| `POST` | `/classify` | Clasificar un texto (JSON) |
+| `POST` | `/classify/batch` | Clasificar múltiples textos (JSON) |
+| `GET` | `/api/categories` | Lista de categorías (JSON) |
+| `GET` | `/health` | Estado del servicio y stats de caché |
+
+### POST /classify
+
+```bash
+curl -X POST http://localhost:8000/classify \
+  -H "Content-Type: application/json" \
+  -d '{"text": "Tu código OTP es 482910. No lo compartas."}'
+```
+
+```json
+{
+  "text": "Tu código OTP es 482910. No lo compartas.",
+  "prediction": {
+    "category": "otp_verification",
+    "confidence": 0.9821
+  },
+  "top_3": [
+    { "category": "otp_verification", "confidence": 0.9821 },
+    { "category": "security_alert",   "confidence": 0.0091 },
+    { "category": "customer_service", "confidence": 0.0044 }
+  ],
+  "cached": false
+}
+```
+
+### POST /classify/batch
+
+```bash
+curl -X POST http://localhost:8000/classify/batch \
+  -H "Content-Type: application/json" \
+  -d '{"texts": ["Tu código OTP es 482910.", "Se debitó $45.000 en Falabella."]}'
+```
+
+```json
+{
+  "results": [...],
+  "total": 2,
+  "from_cache": 0
+}
+```
+
+## Deploy en Render
+
+El proyecto incluye `render.yaml` configurado para deploy automático vía Docker.
+
+1. Crear repositorio en GitHub y pushear el código
+2. En [Render.com](https://render.com): New → Web Service → conectar el repo
+3. Render detecta `render.yaml` automáticamente
+4. El primer deploy tarda ~5 min (imagen Docker ~700MB)

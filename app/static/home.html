@@ -1,0 +1,320 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SMS Classifier API</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #0b0e18;
+      --surface:  #13162200;
+      --surface-solid: #131622;
+      --border:   #1e2235;
+      --border-hover: #2e3450;
+      --text:     #f0f2ff;
+      --sub:      #a0aabf;
+      --muted:    #5a6480;
+      --radius:   14px;
+      --green:    #22d3a0;
+      --blue:     #6c8ef7;
+      --purple:   #a78bfa;
+      --glow-green: #22d3a033;
+      --glow-blue:  #6c8ef722;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 56px 16px 64px;
+      /* subtle radial glow behind content */
+      background-image:
+        radial-gradient(ellipse 80% 40% at 50% 0%, #1a2a6c18 0%, transparent 70%),
+        radial-gradient(ellipse 60% 30% at 80% 80%, #22d3a00a 0%, transparent 60%);
+    }
+
+    .wrap { width: 100%; max-width: 700px; }
+
+    /* ── Header ── */
+    header {
+      text-align: center;
+      margin-bottom: 48px;
+      position: relative;
+    }
+
+    .header-eyebrow {
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: .14em;
+      color: var(--green);
+      margin-bottom: 14px;
+      font-weight: 600;
+    }
+
+    header h1 {
+      font-size: 2.6rem;
+      font-weight: 800;
+      letter-spacing: -1px;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #f0f2ff 30%, #a0c4ff 70%, #22d3a0 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    header p {
+      color: var(--sub);
+      margin-top: 14px;
+      font-size: 1rem;
+      line-height: 1.65;
+      max-width: 480px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+
+    .version-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      margin-top: 18px;
+      padding: 5px 14px;
+      border-radius: 99px;
+      border: 1px solid #22d3a040;
+      background: #22d3a010;
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--green);
+      box-shadow: 0 0 14px #22d3a022;
+    }
+    .version-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--green);
+      box-shadow: 0 0 6px var(--green);
+      animation: pulse 2s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: .4; }
+    }
+
+    /* ── Section title ── */
+    .section-label {
+      font-size: 0.68rem;
+      text-transform: uppercase;
+      letter-spacing: .12em;
+      color: var(--muted);
+      font-weight: 600;
+      margin-bottom: 10px;
+      padding-left: 2px;
+    }
+
+    /* ── Endpoints ── */
+    .endpoints { display: flex; flex-direction: column; gap: 8px; margin-bottom: 28px; }
+
+    .endpoint-card {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 18px;
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      cursor: default;
+      text-decoration: none;
+      color: inherit;
+      transition: transform .18s ease, border-color .18s ease, box-shadow .18s ease;
+    }
+    .endpoint-card:hover {
+      transform: translateY(-2px);
+      border-color: var(--border-hover);
+      box-shadow: 0 6px 24px #00000033, 0 0 0 1px #2e345066;
+    }
+    .endpoint-card.get:hover  { box-shadow: 0 6px 24px #00000033, 0 0 16px #22d3a018; }
+    .endpoint-card.post:hover { box-shadow: 0 6px 24px #00000033, 0 0 16px #6c8ef722; }
+
+    .method-badge {
+      font-size: 0.65rem;
+      font-weight: 800;
+      padding: 4px 9px;
+      border-radius: 6px;
+      flex-shrink: 0;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      min-width: 46px;
+      text-align: center;
+    }
+    .get  { background: #22d3a018; color: var(--green); border: 1px solid #22d3a030; }
+    .post { background: #6c8ef718; color: var(--blue);  border: 1px solid #6c8ef730; }
+
+    .ep-path {
+      font-family: "SF Mono", "Fira Code", monospace;
+      font-size: 0.88rem;
+      font-weight: 600;
+      color: var(--text);
+      flex-shrink: 0;
+    }
+    .ep-desc {
+      font-size: 0.8rem;
+      color: var(--muted);
+      margin-left: auto;
+      text-align: right;
+    }
+
+    /* ── Response block ── */
+    .card {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 22px 24px;
+      margin-bottom: 28px;
+    }
+
+    pre {
+      font-size: 0.8rem;
+      color: #7dd3fc;
+      line-height: 1.75;
+      overflow-x: auto;
+      font-family: "SF Mono", "Fira Code", monospace;
+    }
+    .key   { color: #a78bfa; }
+    .str   { color: #86efac; }
+    .num   { color: #fbbf24; }
+
+    /* ── Stack badges ── */
+    .badges { display: flex; flex-wrap: wrap; gap: 8px; }
+    .badge {
+      padding: 5px 13px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      font-size: 0.78rem;
+      color: var(--sub);
+      background: #ffffff04;
+      transition: border-color .15s, color .15s;
+    }
+    .badge:hover { border-color: var(--border-hover); color: var(--text); }
+
+    /* ── Nav ── */
+    .nav { display: flex; gap: 12px; justify-content: center; margin-top: 36px; }
+    a.btn {
+      padding: 11px 24px;
+      border-radius: 10px;
+      font-size: 0.88rem;
+      font-weight: 700;
+      text-decoration: none;
+      transition: transform .15s, opacity .15s, box-shadow .15s;
+    }
+    a.btn:hover { transform: translateY(-1px); opacity: .9; }
+    a.btn.primary {
+      background: linear-gradient(135deg, #22d3a0, #4f9ef7);
+      color: #0b0e18;
+      box-shadow: 0 4px 18px #22d3a030;
+    }
+    a.btn.primary:hover { box-shadow: 0 6px 24px #22d3a050; }
+    a.btn.secondary {
+      background: var(--surface-solid);
+      border: 1px solid var(--border);
+      color: var(--sub);
+    }
+    a.btn.secondary:hover { border-color: var(--border-hover); color: var(--text); }
+
+    /* ── Divider ── */
+    .divider { height: 1px; background: var(--border); margin: 4px 0 24px; }
+  </style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="header-eyebrow">Machine Learning · NLP · REST API</div>
+    <h1>SMS Classifier API</h1>
+    <p>Clasifica mensajes SMS en categorías usando DistilBERT fine-tuned sobre un dataset multilingüe (ES + EN).</p>
+    <div class="version-badge">
+      <div class="version-dot"></div>
+      v2.0.0 · live
+    </div>
+  </header>
+
+  <div class="section-label">Endpoints</div>
+  <div class="endpoints">
+
+    <a class="endpoint-card get" href="/classify">
+      <span class="method-badge get">GET</span>
+      <span class="ep-path">/classify</span>
+      <span class="ep-desc">Clasificador simple</span>
+    </a>
+
+    <a class="endpoint-card get" href="/classify/batch">
+      <span class="method-badge get">GET</span>
+      <span class="ep-path">/classify/batch</span>
+      <span class="ep-desc">Clasificador por lotes</span>
+    </a>
+
+    <a class="endpoint-card get" href="/categories">
+      <span class="method-badge get">GET</span>
+      <span class="ep-path">/categories</span>
+      <span class="ep-desc">Categorías con ejemplos</span>
+    </a>
+
+  </div>
+
+  <div class="section-label">Ejemplo de respuesta · POST /classify</div>
+  <div class="card">
+    <pre><span class="key">"text"</span>:       <span class="str">"Tu código OTP es 482910. No lo compartas."</span>,
+<span class="key">"prediction"</span>: {
+  <span class="key">"category"</span>:   <span class="str">"otp_verification"</span>,
+  <span class="key">"confidence"</span>: <span class="num">0.9821</span>
+},
+<span class="key">"top_3"</span>: [
+  { <span class="key">"category"</span>: <span class="str">"otp_verification"</span>,  <span class="key">"confidence"</span>: <span class="num">0.9821</span> },
+  { <span class="key">"category"</span>: <span class="str">"security_alert"</span>,    <span class="key">"confidence"</span>: <span class="num">0.0091</span> },
+  { <span class="key">"category"</span>: <span class="str">"customer_service"</span>,  <span class="key">"confidence"</span>: <span class="num">0.0044</span> }
+]</pre>
+  </div>
+
+  <div class="section-label">Ejemplo de respuesta · POST /classify/batch</div>
+  <div class="card">
+    <pre><span class="key">"results"</span>: [
+  {
+    <span class="key">"text"</span>:       <span class="str">"Se debitó $45.000 de tu tarjeta en Falabella."</span>,
+    <span class="key">"prediction"</span>: { <span class="key">"category"</span>: <span class="str">"transaction"</span>, <span class="key">"confidence"</span>: <span class="num">0.9743</span> },
+    <span class="key">"top_3"</span>: [ ... ]
+  },
+  {
+    <span class="key">"text"</span>:       <span class="str">"Tu pedido #45231 está en camino."</span>,
+    <span class="key">"prediction"</span>: { <span class="key">"category"</span>: <span class="str">"delivery_logistics"</span>, <span class="key">"confidence"</span>: <span class="num">0.9612</span> },
+    <span class="key">"top_3"</span>: [ ... ]
+  }
+],
+<span class="key">"total"</span>:      <span class="num">2</span>,
+<span class="key">"from_cache"</span>: <span class="num">0</span></pre>
+  </div>
+
+  <div class="section-label">Stack tecnológico</div>
+  <div class="card" style="padding:20px 24px">
+    <div class="badges">
+      <span class="badge">Python 3.11</span>
+      <span class="badge">FastAPI</span>
+      <span class="badge">DistilBERT multilingual</span>
+      <span class="badge">HuggingFace Transformers</span>
+      <span class="badge">PyTorch CPU</span>
+      <span class="badge">Pydantic v2</span>
+      <span class="badge">Docker</span>
+    </div>
+  </div>
+
+  <div class="nav">
+    <a class="btn primary" href="/classify">Clasificador simple</a>
+    <a class="btn primary" href="/classify/batch">Clasificador por lotes</a>
+    <a class="btn secondary" href="/categories">Ver categorías</a>
+  </div>
+
+</div>
+</body>
+</html>

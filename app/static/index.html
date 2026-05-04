@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SMS Classifier</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg: #0f1117;
+      --surface: #1a1d27;
+      --border: #2a2d3a;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --radius: 12px;
+
+      --transaction:          #3b82f6;
+      --otp_verification:     #8b5cf6;
+      --promotion_offer:      #f59e0b;
+      --security_alert:       #ef4444;
+      --delivery_logistics:   #10b981;
+      --appointment_reminder: #06b6d4;
+      --customer_service:     #6366f1;
+      --spam_advertising:     #f97316;
+      --billing_reminder:     #84cc16;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px;
+    }
+
+    header {
+      text-align: center;
+      margin-bottom: 32px;
+    }
+    header h1 { font-size: 1.75rem; font-weight: 700; letter-spacing: -0.5px; }
+    header p  { color: var(--muted); margin-top: 6px; font-size: 0.9rem; }
+
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+      width: 100%;
+      max-width: 620px;
+    }
+
+    textarea {
+      width: 100%;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-size: 0.95rem;
+      padding: 12px;
+      resize: vertical;
+      min-height: 90px;
+      outline: none;
+      transition: border-color .2s;
+    }
+    textarea:focus { border-color: #4f6ef7; }
+    textarea::placeholder { color: var(--muted); }
+
+    button {
+      margin-top: 12px;
+      width: 100%;
+      padding: 11px;
+      background: linear-gradient(135deg, #22d3a0, #4f9ef7);
+      color: #0b0e18;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.92rem;
+      font-weight: 700;
+      cursor: pointer;
+      transition: transform .15s, opacity .15s, box-shadow .15s;
+      box-shadow: 0 4px 16px #22d3a025;
+    }
+    button:hover:not(:disabled) {
+      opacity: .92; transform: translateY(-1px);
+      box-shadow: 0 6px 22px #22d3a040;
+    }
+    button:disabled { opacity: .45; cursor: not-allowed; transform: none; }
+
+    /* ── Result ── */
+    #result { margin-top: 24px; display: none; }
+
+    .top-prediction {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .category-dot {
+      width: 14px; height: 14px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+    .top-label   { font-size: 1.1rem; font-weight: 700; }
+    .top-conf    { margin-left: auto; font-size: 1.5rem; font-weight: 800; }
+
+    .section-title {
+      font-size: 0.75rem;
+      text-transform: uppercase;
+      letter-spacing: .08em;
+      color: var(--muted);
+      margin-bottom: 10px;
+    }
+
+    .bar-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 10px;
+    }
+    .bar-label { width: 180px; font-size: 0.85rem; flex-shrink: 0; }
+    .bar-track {
+      flex: 1;
+      height: 8px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+    .bar-fill {
+      height: 100%;
+      border-radius: 99px;
+      transition: width .4s ease;
+    }
+    .bar-pct { width: 40px; text-align: right; font-size: 0.8rem; color: var(--muted); }
+
+    /* ── Categories grid ── */
+    #categories-section { margin-top: 32px; width: 100%; max-width: 620px; }
+    .categories-grid {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .cat-chip {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      padding: 5px 10px;
+      border-radius: 99px;
+      border: 1px solid var(--border);
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+    .cat-chip .dot { width: 8px; height: 8px; border-radius: 50%; }
+
+    .spinner {
+      display: inline-block;
+      width: 16px; height: 16px;
+      border: 2px solid #ffffff44;
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .error-msg {
+      color: #ef4444;
+      font-size: 0.85rem;
+      margin-top: 10px;
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <h1>SMS Classifier</h1>
+    <p>Escribe un mensaje y detecta su categoría automáticamente</p>
+  </header>
+
+  <div class="card">
+    <textarea id="input" placeholder="Ej: Tu código de verificación es 482910. No lo compartas con nadie."></textarea>
+    <div class="error-msg" id="error">Ocurrió un error al clasificar. Intenta de nuevo.</div>
+    <button id="btn" onclick="classify()">Clasificar</button>
+
+    <div id="result">
+      <div class="top-prediction" id="top-card">
+        <div class="category-dot" id="top-dot"></div>
+        <span class="top-label" id="top-label"></span>
+        <span class="top-conf"  id="top-conf"></span>
+        <span id="cache-badge" style="display:none;font-size:0.7rem;font-weight:600;padding:3px 10px;border-radius:99px;background:#22d3a015;border:1px solid #22d3a030;color:#22d3a0;margin-left:8px">caché activo</span>
+      </div>
+
+      <div class="section-title">Top 3 predicciones</div>
+      <div id="bars"></div>
+    </div>
+  </div>
+
+  <div style="width:100%;max-width:620px;margin-top:16px;text-align:right">
+    <a href="/classify/batch" style="font-size:0.8rem;color:var(--muted);text-decoration:none;transition:color .2s"
+       onmouseover="this.style.color='var(--text)'" onmouseout="this.style.color='var(--muted)'">
+      Clasificar varios mensajes →
+    </a>
+  </div>
+
+  <div id="categories-section" style="display:none">
+    <div class="section-title" style="margin-bottom:10px">Categorías disponibles</div>
+    <div class="categories-grid" id="cats-grid"></div>
+  </div>
+
+<script>
+  const COLORS = {
+    transaction:          "var(--transaction)",
+    otp_verification:     "var(--otp_verification)",
+    promotion_offer:      "var(--promotion_offer)",
+    security_alert:       "var(--security_alert)",
+    delivery_logistics:   "var(--delivery_logistics)",
+    appointment_reminder: "var(--appointment_reminder)",
+    customer_service:     "var(--customer_service)",
+    spam_advertising:     "var(--spam_advertising)",
+    billing_reminder:     "var(--billing_reminder)",
+  };
+
+  function color(cat) {
+    return COLORS[cat] ?? "#94a3b8";
+  }
+
+  function fmt(cat) {
+    return cat.replace(/_/g, " ");
+  }
+
+  async function classify() {
+    const raw  = document.getElementById("input").value;
+    const text = raw.trim().replace(/\s+/g, " ");
+    const err  = document.getElementById("error");
+
+    if (!text) {
+      err.textContent = "Escribe un mensaje antes de clasificar.";
+      err.style.display = "block";
+      return;
+    }
+    if (text.length > 512) {
+      err.textContent = "El mensaje no puede superar los 512 caracteres.";
+      err.style.display = "block";
+      return;
+    }
+
+    const btn = document.getElementById("btn");
+    err.style.display = "none";
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spinner"></span>Clasificando…';
+
+    try {
+      const res  = await fetch("/classify", {
+        method:  "POST",
+        headers: { "Content-Type": "application/json" },
+        body:    JSON.stringify({ text }),
+      });
+      if (!res.ok) {
+        const body = await res.json().catch(() => ({}));
+        err.textContent = body.detail ?? `Error ${res.status}: ${res.statusText}`;
+        err.style.display = "block";
+        return;
+      }
+      const data = await res.json();
+      render(data);
+    } catch (e) {
+      err.textContent = "No se pudo conectar con el servidor.";
+      err.style.display = "block";
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Clasificar";
+    }
+  }
+
+  function render(data) {
+    const cat  = data.prediction.category;
+    const conf = Math.round(data.prediction.confidence * 100);
+    const c    = color(cat);
+
+    document.getElementById("top-dot").style.background    = c;
+    document.getElementById("top-label").textContent       = fmt(cat);
+    document.getElementById("top-label").style.color       = c;
+    document.getElementById("top-conf").textContent        = conf + "%";
+    document.getElementById("top-conf").style.color        = c;
+    document.getElementById("cache-badge").style.display   = data.cached ? "inline-block" : "none";
+
+    const bars = document.getElementById("bars");
+    bars.innerHTML = data.top_3.map(p => {
+      const pct = Math.round(p.confidence * 100);
+      return `
+        <div class="bar-row">
+          <span class="bar-label">${fmt(p.category)}</span>
+          <div class="bar-track">
+            <div class="bar-fill" style="width:${pct}%;background:${color(p.category)}"></div>
+          </div>
+          <span class="bar-pct">${pct}%</span>
+        </div>`;
+    }).join("");
+
+    document.getElementById("result").style.display = "block";
+  }
+
+  // Load categories on startup
+  fetch("/api/categories")
+    .then(r => r.json())
+    .then(data => {
+      const grid = document.getElementById("cats-grid");
+      grid.innerHTML = data.categories.map(c => `
+        <div class="cat-chip">
+          <div class="dot" style="background:${color(c.name)}"></div>
+          ${fmt(c.name)}
+        </div>`).join("");
+      document.getElementById("categories-section").style.display = "block";
+    });
+
+  // Classify on Enter (Shift+Enter = new line)
+  document.getElementById("input").addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); classify(); }
+  });
+</script>
+</body>
+</html>

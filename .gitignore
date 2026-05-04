@@ -1,0 +1,16 @@
+model/*
+!model/.gitkeep
+.claude/
+__pycache__/
+*.pyc
+*.pyo
+.env
+*.egg-info/
+dist/
+build/
+.DS_Store
+.venv/
+venv/
+*.log
+wandb/
+runs/
