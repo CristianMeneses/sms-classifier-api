@@ -1,3 +1,13 @@
+---
+title: SMS Classifier API
+emoji: 📱
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # SMS Classifier API
 
 API REST para clasificar mensajes SMS en categorías usando **DistilBERT multilingual** con fine-tuning sobre un dataset sintético multilingüe (ES + EN).
@@ -56,7 +66,7 @@ training/
 ### Requisitos
 
 - Python 3.11+
-- Modelo entrenado en `./model/` (ver sección de training)
+- Modelo entrenado en `./model/` (ver sección de entrenamiento)
 
 ```bash
 # Crear entorno virtual
@@ -144,15 +154,15 @@ curl -X POST http://localhost:8000/classify/batch \
 }
 ```
 
-## Deploy en Hugging Face Spaces
+## Despliegue en Hugging Face Spaces
 
-1. Crear un Space en [huggingface.co/new-space](https://huggingface.co/new-space) con SDK: **Docker**
-2. Pushear el código al repo del Space:
+1. Crea un Space en [huggingface.co/new-space](https://huggingface.co/new-space) con SDK: **Docker**
+2. Sube el código al repo del Space:
    ```bash
    git remote add hfspace https://USER:TOKEN@huggingface.co/spaces/USER/SPACE-NAME
    git push hfspace main
    ```
 3. HF Spaces detecta el `Dockerfile` automáticamente y hace el build
-4. Al arrancar, el modelo se descarga desde HF Hub (~520MB, solo la primera vez)
+4. Al iniciar, el modelo se descarga desde HF Hub (~520MB, solo la primera vez)
 
-El modelo está hosteado en [huggingface.co/cmeneses99/sms-classifier](https://huggingface.co/cmeneses99/sms-classifier).
+El modelo está en [huggingface.co/cmeneses99/sms-classifier](https://huggingface.co/cmeneses99/sms-classifier).

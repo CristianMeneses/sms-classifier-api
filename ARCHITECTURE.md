@@ -1,77 +1,77 @@
-# Architecture
+# Arquitectura
 
-## Deployment Overview
+## Despliegue
 
 ```
-GitHub (source code)
+GitHub (código fuente)
     │
-    └─► Hugging Face Spaces (Docker runtime)
-            │  builds & runs the FastAPI container
+    └─► Hugging Face Spaces (runtime Docker)
+            │  construye y ejecuta el contenedor FastAPI
             │
-            ├─► on startup: pulls model from HF Hub
+            ├─► al iniciar: descarga el modelo desde HF Hub
             │       huggingface.co/cmeneses99/sms-classifier
             │       (model.safetensors, tokenizer, config — ~520MB)
             │
-            └─► serves API on port 7860
+            └─► expone la API en el puerto 7860
                     https://cmeneses99-sms-classifier-api.hf.space
 
-cron-job.org ──GET /health every 10min──► HF Spaces (keep-alive)
+cron-job.org ──GET /health cada 10min──► HF Spaces (keep-alive)
 ```
 
-## Request Flow
+## Flujo de una solicitud
 
 ```
-Client
+Cliente
   │
   ▼
 FastAPI (routers/)
   │
-  ├── pages.py      → HTML responses (/, /classify, /classify/batch, /categories)
+  ├── pages.py      → respuestas HTML (/, /classify, /classify/batch, /categories)
   ├── inference.py  → POST /classify, POST /classify/batch
   └── meta.py       → GET /health, GET /api/categories
         │
         ▼
 services/classifier.py
   │
-  ├── LRU Cache (cache.py) ──hit──► return cached response
+  ├── Cache LRU (cache.py) ──hit──► retorna respuesta en caché
   │
-  └── miss ──► model_loader.py (HuggingFace pipeline)
+  └── miss ──► model_loader.py (pipeline de HuggingFace)
                     └── distilbert-base-multilingual-cased (fine-tuned)
-                            └── top_k=3 predictions → PredictResponse
+                            └── top_k=3 predicciones → PredictResponse
 ```
 
-## Model
+## Modelo
 
-| Detail | Value |
+| Detalle | Valor |
 |---|---|
-| Base model | `distilbert-base-multilingual-cased` |
-| Task | Sequence classification |
-| Categories | 9 |
-| Training data | 3,150 synthetic examples (350/category, ES + EN) |
-| Training | 5 epochs, fine-tuned with HuggingFace Trainer API |
-| Runtime | CPU-only (PyTorch CPU build) |
-| Cache | LRU, max 512 entries, thread-safe |
+| Modelo base | `distilbert-base-multilingual-cased` |
+| Tarea | Clasificación de secuencias |
+| Categorías | 9 |
+| Datos de entrenamiento | 3.150 ejemplos sintéticos (350/categoría, ES + EN) |
+| Entrenamiento | 5 épocas, fine-tuning con HuggingFace Trainer API |
+| Runtime | Solo CPU (build CPU de PyTorch) |
+| Cache | LRU, máx. 512 entradas, thread-safe |
 
-## Project Structure
+## Estructura del proyecto
 
 ```
 app/
-├── main.py                  # Lifespan + router registration
-├── model_loader.py          # Downloads model from HF Hub on startup
-├── schemas.py               # Pydantic v2 request/response models
-├── category_meta.py         # Labels, colors, examples per category
-├── cache.py                 # Thread-safe LRU cache
+├── main.py                  # Lifespan + registro de routers
+├── model_loader.py          # Descarga el modelo desde HF Hub al iniciar
+├── schemas.py               # Modelos Pydantic v2 para request/response
+├── category_meta.py         # Labels, colores y ejemplos por categoría
+├── cache.py                 # Cache LRU thread-safe
 ├── utils.py                 # normalize(), read_static()
 ├── routers/
-│   ├── pages.py             # HTML routes
-│   ├── inference.py         # Classification endpoints
-│   └── meta.py              # Health + categories endpoints
+│   ├── pages.py             # Rutas HTML
+│   ├── inference.py         # Endpoints de clasificación
+│   └── meta.py              # Endpoints de health y categorías
 ├── services/
-│   └── classifier.py        # Inference logic with cache integration
+│   └── classifier.py        # Lógica de inferencia con integración de caché
 └── static/
     ├── home.html
-    ├── index.html            # Single classifier UI
-    ├── batch.html            # Batch classifier UI
+    ├── index.html            # UI clasificador simple
+    ├── batch.html            # UI clasificador por lotes
     └── categories.html
 training/
 ├── config.py

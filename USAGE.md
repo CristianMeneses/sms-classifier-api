@@ -1,42 +1,42 @@
-# Usage Guide
+# Guía de uso
 
-Base URL: `https://cmeneses99-sms-classifier-api.hf.space`
+URL base: `https://cmeneses99-sms-classifier-api.hf.space`
 
 ---
 
-## Via Browser (UI)
+## Desde el navegador (UI)
 
 ### Home
-Abrí `https://cmeneses99-sms-classifier-api.hf.space` — vas a ver una descripción de la API con todos los endpoints disponibles y ejemplos de respuesta. Desde ahí podés navegar al resto de las vistas con los botones.
+Abre `https://cmeneses99-sms-classifier-api.hf.space` — vas a ver una descripción de la API con todos los endpoints disponibles y ejemplos de respuesta. Desde ahí puedes navegar al resto de las vistas con los botones.
 
 ---
 
 ### Clasificar un mensaje
-1. Click en **"Clasificador Simple"** desde el home (o navegá directo a `/classify`)
-2. Escribí el mensaje en el campo de texto
-3. Click en **"Clasificar"** o presioná **Enter**
+1. Haz click en **"Clasificador Simple"** desde el home (o navega directo a `/classify`)
+2. Escribe el mensaje en el campo de texto
+3. Haz click en **"Clasificar"** o presiona **Enter**
 4. El resultado muestra la categoría detectada, el nivel de confianza y el top 3 de categorías más probables
 5. Si el mismo texto ya fue consultado antes, aparece el badge **"caché activo"**
 
 ---
 
 ### Clasificar múltiples mensajes
-1. Click en **"Clasificador por Lotes"** desde el home (o navegá directo a `/classify/batch`)
-2. Escribí un mensaje por línea en el área de texto
+1. Haz click en **"Clasificador por Lotes"** desde el home (o navega directo a `/classify/batch`)
+2. Escribe un mensaje por línea en el área de texto
 3. El contador en tiempo real te muestra cuántos mensajes cargaste (máx. 50)
-4. Click en **"Clasificar todo"**
+4. Haz click en **"Clasificar todo"**
 5. Los resultados aparecen uno por uno con su categoría y confianza
-6. En la barra de resumen inferior podés ver cuántos vinieron desde caché
+6. En la barra de resumen inferior puedes ver cuántos vinieron desde caché
 
 ---
 
 ### Ver categorías disponibles
-1. Click en **"Categorías"** desde el home (o navegá directo a `/categories`)
+1. Haz click en **"Categorías"** desde el home (o navega directo a `/categories`)
 2. Cada categoría muestra su descripción y un ejemplo en español e inglés
 
 ---
 
-## Via API (curl)
+## Desde la API (curl)
 
 ### Clasificar un mensaje
 
