@@ -1,13 +1,3 @@
----
-title: SMS Classifier API
-emoji: 📱
-colorFrom: blue
-colorTo: purple
-sdk: docker
-app_port: 7860
-pinned: false
----
-
 # SMS Classifier API
 
 API REST para clasificar mensajes SMS en categorías usando **DistilBERT multilingual** con fine-tuning sobre un dataset sintético multilingüe (ES + EN).
@@ -16,17 +6,17 @@ API REST para clasificar mensajes SMS en categorías usando **DistilBERT multili
 
 ## Categorías
 
-| Categoría | Descripción |
-|---|---|
-| `transaction` | Confirmaciones de pagos, débitos y transferencias |
-| `otp_verification` | Códigos de un solo uso para verificar identidad |
-| `promotion_offer` | Descuentos, cupones y ofertas de comercios |
-| `security_alert` | Accesos no reconocidos y actividad sospechosa |
-| `delivery_logistics` | Estado de envíos y seguimiento de pedidos |
-| `appointment_reminder` | Recordatorios de citas médicas y dentales |
-| `customer_service` | Tickets, reclamos y soporte |
-| `spam_advertising` | Mensajes fraudulentos y publicidad engañosa |
-| `billing_reminder` | Facturas pendientes y fechas de vencimiento |
+| Categoría              | Descripción                                       |
+| ---------------------- | ------------------------------------------------- |
+| `transaction`          | Confirmaciones de pagos, débitos y transferencias |
+| `otp_verification`     | Códigos de un solo uso para verificar identidad   |
+| `promotion_offer`      | Descuentos, cupones y ofertas de comercios        |
+| `security_alert`       | Accesos no reconocidos y actividad sospechosa     |
+| `delivery_logistics`   | Estado de envíos y seguimiento de pedidos         |
+| `appointment_reminder` | Recordatorios de citas médicas y dentales         |
+| `customer_service`     | Tickets, reclamos y soporte                       |
+| `spam_advertising`     | Mensajes fraudulentos y publicidad engañosa       |
+| `billing_reminder`     | Facturas pendientes y fechas de vencimiento       |
 
 ## Stack tecnológico
 
@@ -64,6 +54,7 @@ training/
 ## Correr localmente
 
 ### Requisitos
+
 - Python 3.11+
 - Modelo entrenado en `./model/` (ver sección de training)
 
@@ -102,16 +93,16 @@ python eval_report.py        # reporte de métricas por categoría
 
 ## Endpoints
 
-| Método | Ruta | Descripción |
-|---|---|---|
-| `GET` | `/` | Home con descripción de la API |
-| `GET` | `/classify` | Clasificador interactivo (UI) |
-| `GET` | `/classify/batch` | Clasificador por lotes (UI) |
-| `GET` | `/categories` | Vista de categorías con ejemplos |
-| `POST` | `/classify` | Clasificar un texto (JSON) |
-| `POST` | `/classify/batch` | Clasificar múltiples textos (JSON) |
-| `GET` | `/api/categories` | Lista de categorías (JSON) |
-| `GET` | `/health` | Estado del servicio y stats de caché |
+| Método | Ruta              | Descripción                          |
+| ------ | ----------------- | ------------------------------------ |
+| `GET`  | `/`               | Home con descripción de la API       |
+| `GET`  | `/classify`       | Clasificador interactivo (UI)        |
+| `GET`  | `/classify/batch` | Clasificador por lotes (UI)          |
+| `GET`  | `/categories`     | Vista de categorías con ejemplos     |
+| `POST` | `/classify`       | Clasificar un texto (JSON)           |
+| `POST` | `/classify/batch` | Clasificar múltiples textos (JSON)   |
+| `GET`  | `/api/categories` | Lista de categorías (JSON)           |
+| `GET`  | `/health`         | Estado del servicio y stats de caché |
 
 ### POST /classify
 
@@ -130,7 +121,7 @@ curl -X POST http://localhost:8000/classify \
   },
   "top_3": [
     { "category": "otp_verification", "confidence": 0.9821 },
-    { "category": "security_alert",   "confidence": 0.0091 },
+    { "category": "security_alert", "confidence": 0.0091 },
     { "category": "customer_service", "confidence": 0.0044 }
   ],
   "cached": false
