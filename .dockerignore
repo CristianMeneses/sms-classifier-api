@@ -1,0 +1,11 @@
+.venv/
+venv/
+__pycache__/
+*.pyc
+*.pyo
+.env
+.git/
+.claude/
+training/
+*.md
+model/checkpoint-*/

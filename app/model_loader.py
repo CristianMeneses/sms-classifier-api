@@ -1,32 +1,48 @@
 import json
 from pathlib import Path
 from transformers import pipeline
+from huggingface_hub import hf_hub_download
 
+HF_REPO = "cmeneses99/sms-classifier"
 MODEL_DIR = Path(__file__).parent.parent / "model"
 
 _classifier = None
 _categories: list[str] = []
 
 
+def _ensure_model() -> Path:
+    if (MODEL_DIR / "config.json").exists():
+        return MODEL_DIR
+
+    MODEL_DIR.mkdir(parents=True, exist_ok=True)
+    for filename in [
+        "config.json",
+        "model.safetensors",
+        "tokenizer.json",
+        "tokenizer_config.json",
+        "special_tokens_map.json",
+        "vocab.txt",
+        "label_map.json",
+    ]:
+        hf_hub_download(repo_id=HF_REPO, filename=filename, local_dir=str(MODEL_DIR))
+
+    return MODEL_DIR
+
+
 def load_model() -> None:
     global _classifier, _categories
 
-    if not MODEL_DIR.exists() or not (MODEL_DIR / "config.json").exists():
-        raise RuntimeError(
-            f"No se encontró el modelo en {MODEL_DIR}. "
-            "Ejecuta training/train.py primero."
-        )
+    model_path = _ensure_model()
 
     _classifier = pipeline(
         "text-classification",
-        model=str(MODEL_DIR),
-        tokenizer=str(MODEL_DIR),
+        model=str(model_path),
+        tokenizer=str(model_path),
         top_k=3,
         device=-1,
     )
 
-    label_map_path = MODEL_DIR / "label_map.json"
-    with open(label_map_path, encoding="utf-8") as f:
+    with open(model_path / "label_map.json", encoding="utf-8") as f:
         label_map: dict = json.load(f)
     _categories = list(label_map.values())
 
