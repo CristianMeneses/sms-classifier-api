@@ -1,3 +1,13 @@
+---
+title: SMS Classifier API
+emoji: 📱
+colorFrom: blue
+colorTo: purple
+sdk: docker
+app_port: 7860
+pinned: false
+---
+
 # SMS Classifier API
 
 API REST para clasificar mensajes SMS en categorías usando **DistilBERT multilingual** con fine-tuning sobre un dataset sintético multilingüe (ES + EN).
