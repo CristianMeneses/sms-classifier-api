@@ -12,6 +12,8 @@ pinned: false
 
 API REST para clasificar mensajes SMS en categorías usando **DistilBERT multilingual** con fine-tuning sobre un dataset sintético multilingüe (ES + EN).
 
+**Live demo:** https://cmeneses99-sms-classifier-api.hf.space
+
 ## Categorías
 
 | Categoría | Descripción |
@@ -33,7 +35,8 @@ API REST para clasificar mensajes SMS en categorías usando **DistilBERT multili
 - **PyTorch** (CPU-only en producción)
 - **Pydantic v2** para validación
 - **Docker** para contenedorización
-- **Render.com** para deployment
+- **Hugging Face Spaces** para deployment
+- **Hugging Face Hub** para hosting del modelo
 
 ## Estructura del proyecto
 
@@ -150,11 +153,15 @@ curl -X POST http://localhost:8000/classify/batch \
 }
 ```
 
-## Deploy en Render
+## Deploy en Hugging Face Spaces
 
-El proyecto incluye `render.yaml` configurado para deploy automático vía Docker.
+1. Crear un Space en [huggingface.co/new-space](https://huggingface.co/new-space) con SDK: **Docker**
+2. Pushear el código al repo del Space:
+   ```bash
+   git remote add hfspace https://USER:TOKEN@huggingface.co/spaces/USER/SPACE-NAME
+   git push hfspace main
+   ```
+3. HF Spaces detecta el `Dockerfile` automáticamente y hace el build
+4. Al arrancar, el modelo se descarga desde HF Hub (~520MB, solo la primera vez)
 
-1. Crear repositorio en GitHub y pushear el código
-2. En [Render.com](https://render.com): New → Web Service → conectar el repo
-3. Render detecta `render.yaml` automáticamente
-4. El primer deploy tarda ~5 min (imagen Docker ~700MB)
+El modelo está hosteado en [huggingface.co/cmeneses99/sms-classifier](https://huggingface.co/cmeneses99/sms-classifier).
