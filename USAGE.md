@@ -1,54 +1,54 @@
-# Guía de uso
+# Usage Guide
 
-URL base: `https://cmeneses99-sms-classifier-api.hf.space`
+Base URL: `https://cmeneses99-sms-classifier-api.hf.space`
 
 ---
 
-## Desde el navegador (UI)
+## Via Browser (UI)
 
 ### Home
-Abre `https://cmeneses99-sms-classifier-api.hf.space` — vas a ver una descripción de la API con todos los endpoints disponibles y ejemplos de respuesta. Desde ahí puedes navegar al resto de las vistas con los botones.
+Open `https://cmeneses99-sms-classifier-api.hf.space` to see a description of the API with all available endpoints and response examples. From there you can navigate to any view using the buttons.
 
 ---
 
-### Clasificar un mensaje
-1. Haz click en **"Clasificador Simple"** desde el home (o navega directo a `/classify`)
-2. Escribe el mensaje en el campo de texto
-3. Haz click en **"Clasificar"** o presiona **Enter**
-4. El resultado muestra la categoría detectada, el nivel de confianza y el top 3 de categorías más probables
-5. Si el mismo texto ya fue consultado antes, aparece el badge **"caché activo"**
+### Classify a single message
+1. Click **"Clasificador Simple"** from the home (or navigate directly to `/classify`)
+2. Type the message in the text field
+3. Click **"Clasificar"** or press **Enter**
+4. The result shows the detected category, confidence score and the top 3 most likely categories
+5. If the same text was already classified before, a **"caché activo"** badge appears
 
 ---
 
-### Clasificar múltiples mensajes
-1. Haz click en **"Clasificador por Lotes"** desde el home (o navega directo a `/classify/batch`)
-2. Escribe un mensaje por línea en el área de texto
-3. El contador en tiempo real te muestra cuántos mensajes cargaste (máx. 50)
-4. Haz click en **"Clasificar todo"**
-5. Los resultados aparecen uno por uno con su categoría y confianza
-6. En la barra de resumen inferior puedes ver cuántos vinieron desde caché
+### Classify multiple messages
+1. Click **"Clasificador por Lotes"** from the home (or navigate directly to `/classify/batch`)
+2. Type one message per line in the text area
+3. A real-time counter shows how many messages you have loaded (max 50)
+4. Click **"Clasificar todo"**
+5. Results appear one by one with their category and confidence
+6. The summary bar at the bottom shows how many results came from cache
 
 ---
 
-### Ver categorías disponibles
-1. Haz click en **"Categorías"** desde el home (o navega directo a `/categories`)
-2. Cada categoría muestra su descripción y un ejemplo en español e inglés
+### Browse available categories
+1. Click **"Categorías"** from the home (or navigate directly to `/categories`)
+2. Each category shows its description and an example in Spanish and English
 
 ---
 
-## Desde la API (curl)
+## Via API (curl)
 
-### Clasificar un mensaje
+### Classify one message
 
 ```bash
 curl -X POST https://cmeneses99-sms-classifier-api.hf.space/classify \
   -H "Content-Type: application/json" \
-  -d '{"text": "Tu código OTP es 482910. No lo compartas."}'
+  -d '{"text": "Your OTP code is 482910. Do not share it."}'
 ```
 
 ```json
 {
-  "text": "Tu código OTP es 482910. No lo compartas.",
+  "text": "Your OTP code is 482910. Do not share it.",
   "prediction": { "category": "otp_verification", "confidence": 0.9821 },
   "top_3": [
     { "category": "otp_verification", "confidence": 0.9821 },
@@ -59,18 +59,18 @@ curl -X POST https://cmeneses99-sms-classifier-api.hf.space/classify \
 }
 ```
 
-**Límite:** máx. 512 caracteres por mensaje.
+**Limit:** max 512 characters per message.
 
 ---
 
-### Clasificar múltiples mensajes
+### Classify multiple messages
 
 ```bash
 curl -X POST https://cmeneses99-sms-classifier-api.hf.space/classify/batch \
   -H "Content-Type: application/json" \
   -d '{
     "texts": [
-      "Se debitó $45.000 en Falabella.",
+      "Your card was charged $45 at Amazon.",
       "Your package will arrive tomorrow between 2-4pm.",
       "Pay your bill today and avoid penalties."
     ]
@@ -80,7 +80,7 @@ curl -X POST https://cmeneses99-sms-classifier-api.hf.space/classify/batch \
 ```json
 {
   "results": [
-    { "text": "Se debitó $45.000 en Falabella.", "prediction": { "category": "transaction", "confidence": 0.97 }, "top_3": [...], "cached": false },
+    { "text": "Your card was charged $45 at Amazon.", "prediction": { "category": "transaction", "confidence": 0.97 }, "top_3": [...], "cached": false },
     { "text": "Your package will arrive tomorrow...", "prediction": { "category": "delivery_logistics", "confidence": 0.95 }, "top_3": [...], "cached": false },
     { "text": "Pay your bill today...", "prediction": { "category": "billing_reminder", "confidence": 0.91 }, "top_3": [...], "cached": false }
   ],
@@ -89,11 +89,11 @@ curl -X POST https://cmeneses99-sms-classifier-api.hf.space/classify/batch \
 }
 ```
 
-**Límite:** máx. 50 mensajes por request.
+**Limit:** max 50 messages per request.
 
 ---
 
-### Listar categorías
+### List categories
 
 ```bash
 curl https://cmeneses99-sms-classifier-api.hf.space/api/categories
@@ -123,16 +123,16 @@ curl https://cmeneses99-sms-classifier-api.hf.space/health
 
 ---
 
-## Categorías
+## Categories
 
-| Categoría | Ejemplos |
-|---|---|
-| `transaction` | "Se debitó $45.000 en Falabella" / "Payment of $120 confirmed" |
-| `otp_verification` | "Tu código OTP es 482910" / "Your verification code is 774321" |
-| `promotion_offer` | "30% de descuento este fin de semana" / "Exclusive offer just for you" |
-| `security_alert` | "Acceso no reconocido desde Berlín" / "Failed login attempt detected" |
-| `delivery_logistics` | "Tu pedido está en camino" / "Your package will arrive tomorrow" |
-| `appointment_reminder` | "Recordatorio: cita médica mañana a las 10am" / "Dental appointment confirmed" |
-| `customer_service` | "Tu ticket #4821 fue resuelto" / "Your case has been escalated" |
-| `spam_advertising` | "Ganaste un premio, haz clic aquí" / "You have been selected for a reward" |
-| `billing_reminder` | "Tu factura vence el 15 de mayo" / "Pay your bill today and avoid penalties" |
+| Category               | Examples                                                                          |
+|------------------------|-----------------------------------------------------------------------------------|
+| `transaction`          | "Your card was charged $45 at Amazon" / "Se debitó $45.000 en Falabella"         |
+| `otp_verification`     | "Your OTP code is 482910" / "Tu código OTP es 482910"                            |
+| `promotion_offer`      | "Exclusive offer just for you" / "30% de descuento este fin de semana"           |
+| `security_alert`       | "Failed login attempt detected" / "Acceso no reconocido desde Berlín"            |
+| `delivery_logistics`   | "Your package will arrive tomorrow" / "Tu pedido está en camino"                 |
+| `appointment_reminder` | "Dental appointment confirmed" / "Recordatorio: cita médica mañana a las 10am"  |
+| `customer_service`     | "Your case has been escalated" / "Tu ticket #4821 fue resuelto"                  |
+| `spam_advertising`     | "You have been selected for a reward" / "Ganaste un premio, haz clic aquí"       |
+| `billing_reminder`     | "Pay your bill today and avoid penalties" / "Tu factura vence el 15 de mayo"     |

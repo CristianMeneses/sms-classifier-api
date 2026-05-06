@@ -1,134 +1,134 @@
 # SMS Classifier API
 
-API REST para clasificar mensajes SMS en categorías usando **DistilBERT multilingual** con fine-tuning sobre un dataset sintético multilingüe (ES + EN).
+REST API that classifies SMS messages into operational categories using **multilingual DistilBERT** fine-tuned on a synthetic bilingual dataset (ES + EN).
 
 **Live demo:** https://cmeneses99-sms-classifier-api.hf.space
 
-## Categorías
+## Categories
 
-| Categoría              | Descripción                                       |
-| ---------------------- | ------------------------------------------------- |
-| `transaction`          | Confirmaciones de pagos, débitos y transferencias |
-| `otp_verification`     | Códigos de un solo uso para verificar identidad   |
-| `promotion_offer`      | Descuentos, cupones y ofertas de comercios        |
-| `security_alert`       | Accesos no reconocidos y actividad sospechosa     |
-| `delivery_logistics`   | Estado de envíos y seguimiento de pedidos         |
-| `appointment_reminder` | Recordatorios de citas médicas y dentales         |
-| `customer_service`     | Tickets, reclamos y soporte                       |
-| `spam_advertising`     | Mensajes fraudulentos y publicidad engañosa       |
-| `billing_reminder`     | Facturas pendientes y fechas de vencimiento       |
+| Category               | Description                                          |
+| ---------------------- | ---------------------------------------------------- |
+| `transaction`          | Payment confirmations, debits and transfers          |
+| `otp_verification`     | One-time codes for identity verification             |
+| `promotion_offer`      | Discounts, coupons and merchant offers               |
+| `security_alert`       | Unrecognized access and suspicious activity          |
+| `delivery_logistics`   | Shipment status and order tracking                   |
+| `appointment_reminder` | Medical and dental appointment reminders             |
+| `customer_service`     | Tickets, claims and support updates                  |
+| `spam_advertising`     | Fraudulent messages and misleading advertising       |
+| `billing_reminder`     | Pending invoices and payment due dates               |
 
-## Stack tecnológico
+## Tech stack
 
 - **Python 3.11** + **FastAPI** + **Uvicorn**
-- **DistilBERT** (`distilbert-base-multilingual-cased`) vía HuggingFace Transformers
-- **PyTorch** (CPU-only en producción)
-- **Pydantic v2** para validación
-- **Docker** para contenedorización
-- **Hugging Face Spaces** para deployment
-- **Hugging Face Hub** para hosting del modelo
+- **DistilBERT** (`distilbert-base-multilingual-cased`) via HuggingFace Transformers
+- **PyTorch** (CPU-only in production)
+- **Pydantic v2** for validation
+- **Docker** for containerization
+- **Hugging Face Spaces** for deployment
+- **Hugging Face Hub** for model hosting
 
-## Estructura del proyecto
+## Project structure
 
 ```
 app/
 ├── main.py                      # App entry point
 ├── utils.py                     # normalize(), read_static()
-├── core/                        # Infraestructura compartida
-│   ├── cache.py                 # LRU cache thread-safe
-│   ├── model_loader.py          # Carga del modelo al startup
-│   ├── schemas.py               # Modelos Pydantic
-│   └── category_meta.py         # Metadata de categorías
+├── core/                        # Shared infrastructure
+│   ├── cache.py                 # Thread-safe LRU cache
+│   ├── model_loader.py          # Downloads and loads the model at startup
+│   ├── schemas.py               # Pydantic models
+│   └── category_meta.py         # Category metadata
 ├── services/
-│   └── classifier.py            # Lógica de inferencia + caché LRU
-├── api/                         # Endpoints JSON
+│   └── classifier.py            # Inference logic + LRU cache integration
+├── api/                         # JSON endpoints
 │   ├── inference.py             # POST /classify, POST /classify/batch
 │   └── meta.py                  # GET /health, GET /api/categories
-├── web/                         # Endpoints HTML
-│   └── pages.py                 # Rutas de UI
-└── templates/                   # Archivos HTML
+├── web/                         # HTML endpoints
+│   └── pages.py                 # UI routes
+└── templates/                   # HTML files
     ├── home.html
     ├── index.html
     ├── batch.html
     └── categories.html
 training/
-├── config.py                    # Hiperparámetros
-├── generate_dataset.py          # Genera training/data/sms_dataset.csv
+├── config.py                    # Hyperparameters
+├── generate_dataset.py          # Generates training/data/sms_dataset.csv
 ├── train.py                     # Fine-tuning script
-└── eval_report.py               # Reporte de métricas por categoría
+└── eval_report.py               # Per-category metrics report
 ```
 
-## Correr localmente
+## Run locally
 
-### Requisitos
+### Requirements
 
 - Python 3.11+
-- Modelo entrenado en `./model/` (ver sección de entrenamiento)
+- Trained model in `./model/` (see training section)
 
 ```bash
-# Crear entorno virtual
+# Create virtual environment
 python -m venv .venv
 .venv\Scripts\activate        # Windows
 source .venv/bin/activate     # Linux/Mac
 
-# Instalar dependencias
+# Install dependencies
 pip install -r requirements.txt
 pip install torch --index-url https://download.pytorch.org/whl/cpu
 
-# Levantar API
+# Start API
 uvicorn app.main:app --reload
 ```
 
-API disponible en `http://localhost:8000`
+API available at `http://localhost:8000`
 
-### Con Docker
+### With Docker
 
 ```bash
 docker compose up --build
 ```
 
-## Entrenar el modelo
+## Train the model
 
 ```bash
 pip install -r requirements-training.txt
 
 cd training
-python generate_dataset.py   # genera training/data/sms_dataset.csv
-python train.py              # fine-tuning → guarda modelo en ./model/
-python eval_report.py        # reporte de métricas por categoría
+python generate_dataset.py   # generates training/data/sms_dataset.csv
+python train.py              # fine-tuning → saves model to ./model/
+python eval_report.py        # per-category metrics report
 ```
 
 ## Endpoints
 
-| Método | Ruta              | Descripción                          |
-| ------ | ----------------- | ------------------------------------ |
-| `GET`  | `/`               | Home con descripción de la API       |
-| `GET`  | `/classify`       | Clasificador interactivo (UI)        |
-| `GET`  | `/classify/batch` | Clasificador por lotes (UI)          |
-| `GET`  | `/categories`     | Vista de categorías con ejemplos     |
-| `POST` | `/classify`       | Clasificar un texto (JSON)           |
-| `POST` | `/classify/batch` | Clasificar múltiples textos (JSON)   |
-| `GET`  | `/api/categories` | Lista de categorías (JSON)           |
-| `GET`  | `/health`         | Estado del servicio y stats de caché |
+| Method | Route             | Description                        |
+| ------ | ----------------- | ---------------------------------- |
+| `GET`  | `/`               | Home with API description          |
+| `GET`  | `/classify`       | Interactive single classifier (UI) |
+| `GET`  | `/classify/batch` | Batch classifier (UI)              |
+| `GET`  | `/categories`     | Categories view with examples      |
+| `POST` | `/classify`       | Classify one message (JSON)        |
+| `POST` | `/classify/batch` | Classify multiple messages (JSON)  |
+| `GET`  | `/api/categories` | List categories (JSON)             |
+| `GET`  | `/health`         | Service status and cache stats     |
 
 ### POST /classify
 
 ```bash
 curl -X POST http://localhost:8000/classify \
   -H "Content-Type: application/json" \
-  -d '{"text": "Tu código OTP es 482910. No lo compartas."}'
+  -d '{"text": "Your OTP code is 482910. Do not share it."}'
 ```
 
 ```json
 {
-  "text": "Tu código OTP es 482910. No lo compartas.",
+  "text": "Your OTP code is 482910. Do not share it.",
   "prediction": {
     "category": "otp_verification",
     "confidence": 0.9821
   },
   "top_3": [
     { "category": "otp_verification", "confidence": 0.9821 },
-    { "category": "security_alert", "confidence": 0.0091 },
+    { "category": "security_alert",   "confidence": 0.0091 },
     { "category": "customer_service", "confidence": 0.0044 }
   ],
   "cached": false
@@ -140,7 +140,7 @@ curl -X POST http://localhost:8000/classify \
 ```bash
 curl -X POST http://localhost:8000/classify/batch \
   -H "Content-Type: application/json" \
-  -d '{"texts": ["Tu código OTP es 482910.", "Se debitó $45.000 en Falabella."]}'
+  -d '{"texts": ["Your OTP code is 482910.", "Your card was charged $45 at Amazon."]}'
 ```
 
 ```json
@@ -151,15 +151,15 @@ curl -X POST http://localhost:8000/classify/batch \
 }
 ```
 
-## Despliegue en Hugging Face Spaces
+## Deploy on Hugging Face Spaces
 
-1. Crea un Space en [huggingface.co/new-space](https://huggingface.co/new-space) con SDK: **Docker**
-2. Sube el código al repo del Space:
+1. Create a Space at [huggingface.co/new-space](https://huggingface.co/new-space) with SDK: **Docker**
+2. Push the code to the Space repo:
    ```bash
    git remote add hfspace https://USER:TOKEN@huggingface.co/spaces/USER/SPACE-NAME
    git push hfspace main
    ```
-3. HF Spaces detecta el `Dockerfile` automáticamente y hace el build
-4. Al iniciar, el modelo se descarga desde HF Hub (~520MB, solo la primera vez)
+3. HF Spaces detects the `Dockerfile` automatically and builds the image
+4. On startup, the model is downloaded from HF Hub (~520MB, first time only)
 
-El modelo está en [huggingface.co/cmeneses99/sms-classifier](https://huggingface.co/cmeneses99/sms-classifier).
+Model hosted at [huggingface.co/cmeneses99/sms-classifier](https://huggingface.co/cmeneses99/sms-classifier).
