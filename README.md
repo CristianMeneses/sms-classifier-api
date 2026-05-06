@@ -32,23 +32,30 @@ API REST para clasificar mensajes SMS en categorías usando **DistilBERT multili
 
 ```
 app/
-├── main.py                  # App entry point
-├── routers/
-│   ├── pages.py             # Rutas HTML
-│   ├── inference.py         # POST /classify, POST /classify/batch
-│   └── meta.py              # GET /health, GET /api/categories
+├── main.py                      # App entry point
+├── utils.py                     # normalize(), read_static()
+├── core/                        # Infraestructura compartida
+│   ├── cache.py                 # LRU cache thread-safe
+│   ├── model_loader.py          # Carga del modelo al startup
+│   ├── schemas.py               # Modelos Pydantic
+│   └── category_meta.py         # Metadata de categorías
 ├── services/
-│   └── classifier.py        # Lógica de inferencia + caché LRU
-├── schemas.py               # Modelos Pydantic
-├── category_meta.py         # Metadata de categorías
-├── cache.py                 # LRU cache thread-safe
-├── model_loader.py          # Carga del modelo al startup
-└── utils.py                 # normalize(), read_static()
+│   └── classifier.py            # Lógica de inferencia + caché LRU
+├── api/                         # Endpoints JSON
+│   ├── inference.py             # POST /classify, POST /classify/batch
+│   └── meta.py                  # GET /health, GET /api/categories
+├── web/                         # Endpoints HTML
+│   └── pages.py                 # Rutas de UI
+└── templates/                   # Archivos HTML
+    ├── home.html
+    ├── index.html
+    ├── batch.html
+    └── categories.html
 training/
-├── config.py                # Hiperparámetros
-├── generate_dataset.py      # Genera training/data/sms_dataset.csv
-├── train.py                 # Fine-tuning script
-└── eval_report.py           # Reporte de métricas por categoría
+├── config.py                    # Hiperparámetros
+├── generate_dataset.py          # Genera training/data/sms_dataset.csv
+├── train.py                     # Fine-tuning script
+└── eval_report.py               # Reporte de métricas por categoría
 ```
 
 ## Correr localmente

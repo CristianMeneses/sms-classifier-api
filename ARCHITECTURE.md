@@ -56,22 +56,24 @@ services/classifier.py
 
 ```
 app/
-├── main.py                  # Lifespan + registro de routers
-├── model_loader.py          # Descarga el modelo desde HF Hub al iniciar
-├── schemas.py               # Modelos Pydantic v2 para request/response
-├── category_meta.py         # Labels, colores y ejemplos por categoría
-├── cache.py                 # Cache LRU thread-safe
-├── utils.py                 # normalize(), read_static()
-├── routers/
-│   ├── pages.py             # Rutas HTML
-│   ├── inference.py         # Endpoints de clasificación
-│   └── meta.py              # Endpoints de health y categorías
+├── main.py                      # Lifespan + registro de routers
+├── utils.py                     # normalize(), read_static()
+├── core/                        # Infraestructura compartida
+│   ├── cache.py                 # Cache LRU thread-safe
+│   ├── model_loader.py          # Descarga el modelo desde HF Hub al iniciar
+│   ├── schemas.py               # Modelos Pydantic v2 para request/response
+│   └── category_meta.py         # Labels, colores y ejemplos por categoría
 ├── services/
-│   └── classifier.py        # Lógica de inferencia con integración de caché
-└── static/
+│   └── classifier.py            # Lógica de inferencia con integración de caché
+├── api/                         # Endpoints JSON
+│   ├── inference.py             # POST /classify, POST /classify/batch
+│   └── meta.py                  # GET /health, GET /api/categories
+├── web/                         # Endpoints HTML
+│   └── pages.py                 # Rutas de UI
+└── templates/                   # Archivos HTML
     ├── home.html
-    ├── index.html            # UI clasificador simple
-    ├── batch.html            # UI clasificador por lotes
+    ├── index.html                # UI clasificador simple
+    ├── batch.html                # UI clasificador por lotes
     └── categories.html
 training/
 ├── config.py
