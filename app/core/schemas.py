@@ -9,8 +9,8 @@ class PredictRequest(BaseModel):
     def sanitize(cls, v: str) -> str:
         v = v.strip()
         if not v:
-            raise ValueError("El texto no puede estar vacío o contener solo espacios")
-        # Colapsa whitespace excesivo (tabs, múltiples espacios, newlines)
+            raise ValueError("Text cannot be empty or contain only whitespace")
+        # collapse excessive whitespace (tabs, multiple spaces, newlines)
         v = " ".join(v.split())
         return v
 
@@ -37,9 +37,9 @@ class ClassifyBatchRequest(BaseModel):
         for text in v:
             text = " ".join(text.strip().split())
             if not text:
-                raise ValueError("Cada texto debe tener al menos un carácter")
+                raise ValueError("Each text must have at least one character")
             if len(text) > 512:
-                raise ValueError("Cada texto debe tener máximo 512 caracteres")
+                raise ValueError("Each text must have at most 512 characters")
             result.append(text)
         return result
 

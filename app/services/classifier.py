@@ -1,6 +1,6 @@
-from ..cache import LRUCache
-from ..model_loader import get_classifier
-from ..schemas import PredictResponse, IntentPrediction
+from ..core.cache import LRUCache
+from ..core.model_loader import get_classifier
+from ..core.schemas import PredictResponse, IntentPrediction
 
 _cache = LRUCache(max_size=512)
 
@@ -10,6 +10,7 @@ def get_cache() -> LRUCache:
 
 
 def run_inference(texts: list[str]) -> list[PredictResponse]:
+    """Run the model on a list of texts and return structured responses."""
     classifier = get_classifier()
     raw = classifier(texts, batch_size=16)
     responses = []
@@ -24,6 +25,7 @@ def run_inference(texts: list[str]) -> list[PredictResponse]:
 
 
 def classify_one(normalized_text: str, original_text: str) -> PredictResponse:
+    """Classify a single message, using cache when available."""
     cached = _cache.get(normalized_text)
     if cached:
         return cached.model_copy(update={"cached": True})
@@ -34,7 +36,7 @@ def classify_one(normalized_text: str, original_text: str) -> PredictResponse:
 
 
 def classify_many(normalized_texts: list[str], original_texts: list[str]) -> tuple[list[PredictResponse], int]:
-    """Returns (results, from_cache_count)."""
+    """Classify a batch of messages. Returns (results, from_cache_count)."""
     results: list[PredictResponse | None] = [None] * len(normalized_texts)
     from_cache = 0
     pending = []

@@ -4,13 +4,14 @@ from transformers import pipeline
 from huggingface_hub import hf_hub_download
 
 HF_REPO = "cmeneses99/sms-classifier"
-MODEL_DIR = Path(__file__).parent.parent / "model"
+MODEL_DIR = Path(__file__).parent.parent.parent / "model"
 
 _classifier = None
 _categories: list[str] = []
 
 
 def _ensure_model() -> Path:
+    """Download model files from HF Hub if not present locally."""
     if (MODEL_DIR / "config.json").exists():
         return MODEL_DIR
 
@@ -30,6 +31,7 @@ def _ensure_model() -> Path:
 
 
 def load_model() -> None:
+    """Load the classifier pipeline and category labels into module-level state."""
     global _classifier, _categories
 
     model_path = _ensure_model()

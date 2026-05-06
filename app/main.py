@@ -1,7 +1,8 @@
 from contextlib import asynccontextmanager
 from fastapi import FastAPI
-from .model_loader import load_model
-from .routers import pages, inference, meta
+from .core.model_loader import load_model
+from .api import inference, meta
+from .web import pages
 
 
 @asynccontextmanager
@@ -12,7 +13,7 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(
     title="SMS Classifier API",
-    description="Clasifica mensajes SMS en categorías usando DistilBERT fine-tuned.",
+    description="Classifies SMS messages into categories using fine-tuned DistilBERT.",
     version="2.0.0",
     lifespan=lifespan,
 )

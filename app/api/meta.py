@@ -1,6 +1,6 @@
 from fastapi import APIRouter
-from ..model_loader import get_categories
-from ..category_meta import CATEGORY_META
+from ..core.model_loader import get_categories
+from ..core.category_meta import CATEGORY_META
 from ..services.classifier import get_cache
 
 router = APIRouter(tags=["meta"])
